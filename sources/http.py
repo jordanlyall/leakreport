@@ -3,6 +3,7 @@
 A transport is `fn(method, url, headers, body) -> (status, headers_dict, body_bytes)`.
 """
 import json
+import math
 import time
 import urllib.error
 import urllib.request
@@ -93,7 +94,9 @@ def _retry_after(headers: dict, attempt: int) -> float:
     ra = headers.get("retry-after")
     if ra is not None:
         try:
-            return max(0.0, float(ra))
+            v = float(ra)
+            if math.isfinite(v):
+                return min(60.0, max(0.0, v))
         except ValueError:
             pass
     return min(60.0, 2.0 ** attempt)

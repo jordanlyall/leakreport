@@ -2,6 +2,7 @@
 
 Implements ledger.fees.FeeAttributor for Seaport.
 """
+import unicodedata
 import urllib.parse
 from dataclasses import dataclass
 
@@ -283,4 +284,7 @@ def reverse_ens(rpc: Rpc, address: str) -> str | None:
     out = _ur_call(rpc, _REVERSE + (64).to_bytes(32, "big").hex() + (60).to_bytes(32, "big").hex()
                    + _abi_bytes(bytes.fromhex(address.lower()[2:])).hex())
     name = _dyn(out, 0).decode("utf-8", "replace") if out and len(out) >= 96 else ""
+    # The name is whatever the address owner set on-chain: drop control and format characters so it
+    # can't carry terminal escapes into the printed report or the card.
+    name = "".join(ch for ch in name if unicodedata.category(ch) not in ("Cc", "Cf"))
     return name or None
