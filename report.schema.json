@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "leakreport report",
+  "type": "object",
+  "required": ["wallet", "period", "totals", "score", "leaks", "strength", "flags", "collections", "lots",
+               "quality", "sources"],
+  "additionalProperties": false,
+  "$defs": {
+    "eth": {"type": ["number", "null"]},
+    "day": {"type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    "addr": {"type": "string", "pattern": "^0x[0-9a-f]{40}$"}
+  },
+  "properties": {
+    "wallet": {
+      "type": "object", "required": ["address", "ens", "as_of"],
+      "properties": {
+        "address": {"$ref": "#/$defs/addr"},
+        "ens": {"type": ["string", "null"]},
+        "as_of": {"$ref": "#/$defs/day"},
+        "linked": {"type": "array", "items": {"$ref": "#/$defs/addr"}}
+      }
+    },
+    "period": {"type": "object", "required": ["from", "to"],
+               "properties": {"from": {"$ref": "#/$defs/day"}, "to": {"$ref": "#/$defs/day"}}},
+    "totals": {
+      "type": "object",
+      "required": ["deployed_eth", "realized_pnl_eth", "unrealized_pnl_eth", "fees_eth", "royalties_eth", "gas_eth"],
+      "additionalProperties": {"$ref": "#/$defs/eth"}
+    },
+    "score": {
+      "type": "object", "required": ["value", "low_sample"],
+      "properties": {"value": {"type": "integer", "minimum": 0, "maximum": 100},
+                     "low_sample": {"type": "boolean"}, "acquisitions": {"type": "integer"}}
+    },
+    "leaks": {
+      "type": "array", "minItems": 6, "maxItems": 6,
+      "items": {
+        "type": "object", "required": ["id", "name", "eth", "usd", "weight", "detail", "items"],
+        "properties": {
+          "id": {"enum": ["fee_drag", "held_past_floor", "bought_at_top", "listing_churn", "sold_into_bids",
+                          "dead_inventory"]},
+          "name": {"type": "string"},
+          "eth": {"type": "number", "minimum": 0},
+          "usd": {"type": "number", "minimum": 0},
+          "weight": {"enum": [1.0, 0.5]},
+          "detail": {"type": "object"},
+          "items": {"type": "array", "items": {"type": "object", "required": ["eth", "usd", "day"]}}
+        }
+      }
+    },
+    "strength": {"type": "object", "required": ["id", "text"],
+                 "properties": {"id": {"type": "string"}, "text": {"type": "string"}}},
+    "flags": {
+      "type": "object", "required": ["concentration"],
+      "properties": {"concentration": {
+        "type": "object", "required": ["top1_share", "top3_share", "level"],
+        "properties": {"top1_share": {"type": "number", "minimum": 0, "maximum": 1},
+                       "top3_share": {"type": "number", "minimum": 0, "maximum": 1},
+                       "level": {"enum": ["none", "normal", "high"]}}
+      }}
+    },
+    "collections": {
+      "type": "array",
+      "items": {"type": "object", "required": ["slug", "lots", "basis_eth", "floor_eth", "leaks_eth"],
+                "properties": {"slug": {"type": "string"}, "lots": {"type": "integer"},
+                               "basis_eth": {"$ref": "#/$defs/eth"}, "floor_eth": {"$ref": "#/$defs/eth"},
+                               "leaks_eth": {"type": "object"}}}
+    },
+    "lots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["contract", "token_id", "acquired", "basis_eth", "disposed", "proceeds_eth", "fees_eth",
+                     "royalty_eth"],
+        "properties": {"contract": {"$ref": "#/$defs/addr"}, "token_id": {"type": "string"},
+                       "acquired": {"$ref": "#/$defs/day"}, "disposed": {"$ref": "#/$defs/day"},
+                       "basis_eth": {"$ref": "#/$defs/eth"}, "proceeds_eth": {"$ref": "#/$defs/eth"},
+                       "fees_eth": {"$ref": "#/$defs/eth"}, "royalty_eth": {"$ref": "#/$defs/eth"},
+                       "qty": {"type": "integer", "minimum": 1}, "flags": {"type": "array"}}
+      }
+    },
+    "quality": {
+      "type": "object",
+      "required": ["unpriced_sales", "unpriced_disposals", "valuation", "events_missing_receipt", "floor_source"],
+      "properties": {"valuation": {"const": "collection_level"},
+                     "floor_source": {"enum": ["opensea", "sales_proxy", "opensea+sales_proxy", "mixed", "none"]}}
+    },
+    "sources": {"type": "object", "required": ["opensea_api", "rpc", "eth_usd"]}
+  }
+}
